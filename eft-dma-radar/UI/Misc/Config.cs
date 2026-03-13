@@ -82,7 +82,11 @@ namespace eft_dma_radar.UI.Misc
         /// </summary>
         [JsonPropertyName("containerDrawDistance")]
         public float ContainerDrawDistance { get; set; } = 100f;
-
+        /// <summary>
+        /// Maximum distance to draw doors on the Radar UI.
+        /// </summary>
+        [JsonPropertyName("doorDrawDistance")]
+        public float DoorDrawDistance { get; set; } = 150f;
         /// <summary>
         /// Shows loot on map.
         /// </summary>
@@ -103,6 +107,8 @@ namespace eft_dma_radar.UI.Misc
         public int AIArmourClassMin { get; set; } = 3;
         [JsonPropertyName("showImportantPlayer")]
         public bool ShowImportantPlayer { get; set; } = true;
+        [JsonPropertyName("detectPlayerNvg")]
+        public bool DetectPlayerNvg { get; set; } = false;
         /// <summary>
         /// Draws (AIMING) under a player on the map
         /// </summary>
@@ -138,6 +144,11 @@ namespace eft_dma_radar.UI.Misc
         [JsonPropertyName("showMines")]
         public bool ShowMines { get; set; } = true;
 
+        /// <summary>
+        /// Show doors in the Radar UI.
+        /// </summary>
+        [JsonPropertyName("showDoors")]
+        public bool ShowDoors { get; set; } = true;
         /// <summary>
         /// Show BorderZone for KillTask
         /// </summary>
@@ -507,6 +518,16 @@ namespace eft_dma_radar.UI.Misc
         [JsonPropertyName("showFPS")]
         public bool ShowFPS { get; set; } = false;
         /// <summary>
+        /// Enable DoorViewer feature
+        /// </summary>
+        [JsonPropertyName("showDoorViewer")]
+        public bool ShowDoorViewer { get; set; } = false;
+        /// <summary>
+        /// Blacklisted doors
+        /// </summary>
+        [JsonPropertyName("doorViewerBlacklist")]
+        public List<string> DoorViewerBlacklist { get; set; } = new List<string>();
+        /// <summary>
         /// Draw Loot Menu in ESP.
         /// </summary>
         [JsonPropertyName("showLootmenu")]
@@ -537,9 +558,18 @@ namespace eft_dma_radar.UI.Misc
         [JsonPropertyName("maxQuestItemsNum")]
         public int MaxQuestItemsNum { get; set; } = 0;
         /// <summary>
-        /// Header state
+        /// Max number of wishlist items
         /// </summary>
-        public bool LootHeaderState { get; set; } = false;
+        [JsonPropertyName("maxWishlistItemsNum")]
+        public int MaxWishlistItemsNum { get; set; } = 0;
+        /// <summary>
+        /// Max number of important items
+        /// </summary>
+        public int MaxImportantItemsNum { get; set; } = 0;
+        /// <summary>
+        /// Header mode
+        /// </summary>
+        public LootHeaderMode LootHeaderIndex { get; set; } = 0;
         // <summary>
         // Show InGame Time (for Tasking)
         // <summary>
@@ -564,6 +594,11 @@ namespace eft_dma_radar.UI.Misc
         [JsonPropertyName("showOnlyWishlist")]
         public bool ShowOnlyWishlist { get; set; } = false;
 
+        /// <summary>
+        /// Display important items only in ESP.
+        /// </summary>
+        [JsonPropertyName("showOnlyImportantLoot")]
+        public bool ShowOnlyImportantLoot { get; set; } = false;
         /// <summary>
         /// Display grenades in ESP.
         /// </summary>
@@ -600,6 +635,11 @@ namespace eft_dma_radar.UI.Misc
         /// </summary>
         [JsonPropertyName("showTripwireLine")]
         public bool ShowTripwireLine { get; set; } = false;
+        /// <summary>
+        /// Display tracer line following grenade path in ESP
+        /// </summary>
+        [JsonPropertyName("showGrenadeTracer")]
+        public bool ShowGrenadeTracer { get; set; } = false;
         /// <summary>
         /// Display grenades as icons in ESP
         /// </summary>
@@ -755,6 +795,17 @@ namespace eft_dma_radar.UI.Misc
         [JsonPropertyName("lineScale")]
         public float LineScale { get; set; } = 1.0f;
 
+        /// <summary>
+        /// Distance to draw doors on ESP
+        /// </summary>
+        [JsonPropertyName("drawDoorDistance")]
+        public float DrawDoorDistance { get; set; } = 50.0f;
+
+        /// <summarry>
+        /// Weither or not to check player height for door drawing
+        /// </summarry>
+        [JsonPropertyName("doorHeightCheck")]
+        public bool DoorHeightCheck { get; set; } = false;
         /// <summary>
         /// FPS Cap for ESP Rendering.
         /// 0 = Infinite.

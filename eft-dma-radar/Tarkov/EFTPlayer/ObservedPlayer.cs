@@ -11,6 +11,7 @@ using eft_dma_shared.Common.Misc.Commercial;
 using eft_dma_shared.Common.Misc.Data;
 using eft_dma_shared.Common.Players;
 using eft_dma_shared.Common.Unity;
+using eft_dma_shared.Common.Unity.Collections;
 using System;
 using static SDK.Enums;
 
@@ -30,6 +31,8 @@ namespace eft_dma_radar.Tarkov.EFTPlayer
         /// ObservedHealthController for non-clientplayer players.
         /// </summary>
         private ulong ObservedHealthController { get; }
+        // Change MainParts property to be a private settable property so it can be assigned in the constructor and UpdatePlayerMainParts
+        public MemDictionary<BodyPartType, ulong> MainParts { get; private set; }
         /// <summary>
         /// Player name.
         /// </summary>
@@ -43,6 +46,11 @@ namespace eft_dma_radar.Tarkov.EFTPlayer
         /// Player hours.
         /// </summary>
         public override int Hours { get; set; }
+
+        /// <summary>
+        /// Player kill-death ratio.
+        /// </summary>
+        public override float KD { get; set; }
         /// <summary>
         /// Player level.
         /// </summary>
@@ -125,18 +133,18 @@ namespace eft_dma_radar.Tarkov.EFTPlayer
             static GuardIdentifier()
             {
                 AddMap("shoreline",
-                    new List<string> { "SFMP", "Beta 2", "Attack 2" },
-                    new List<string> { "Altyn", "LShZ-2DTM" },
-                    new List<string> { "m62", "m993", "pp", "bp", "ap-20", "ppbs" },
-                    new Dictionary<string, List<List<string>>>
-                    {
+                   new List<string> { "SFMP", "Beta 2", "Attack 2" },
+                   new List<string> { "Altyn", "LShZ-2DTM", "ZSh-1-2M" },
+                   new List<string> { "m62", "m993", "pp", "bp", "ap-20", "ppbs" },
+                   new Dictionary<string, List<List<string>>>
+                   {
                 { "VPO-101 Vepr-Hunter", new List<List<string>> { new List<string> { "USP-1", "USP-1 cup" } } },
                 { "Saiga-12K", new List<List<string>> { new List<string> { "EKP-8-02 DT", "Powermag", "Sb.5" } } },
                 { "VPO-136 Vepr-KM", new List<List<string>> { new List<string> { "B10M+B19" } } },
                 { "AKM", new List<List<string>> { new List<string> { "B-10", "RK-6" } } },
                 { "AKS-74UB", new List<List<string>> { new List<string> { "PBS-4", "EKP-8-02 DT", "B-11" } } }
-                    }
-                );
+                   }
+               );
                 AddMap("bigmap",
                     null,
                     new List<string> { "Altyn" },
@@ -223,20 +231,42 @@ namespace eft_dma_radar.Tarkov.EFTPlayer
                     }
                 } }
                 );
-                AddMap("streets",
+                AddMap("tarkovstreets",
                     new List<string> { "Attack 2" },
                     new List<string> { "Altyn", "LShZ-2DTM", "Maska-1SCh", "Vulkan-5", "ZSh-1-2M" },
-                    new List<string> { "m62", "m80", "zvezda", "shrap-10", "pp" },
+                    new List<string> { "m62", "m80", "zvezda", "shrap-10", "barrikada", "pp" },
                     new Dictionary<string, List<List<string>>>
                     {
                         { "RPDN", new List<List<string>> { new List<string> { "USP-1" } } },
                         { "PP-19-01", new List<List<string>>
                         {
-                            new List<string> { "EKP-8-18" },
-                            new List<string> { "Vityaz-SN" }
-                        }
-                },
-                    });
+                            new List<string> { "EKP-8-18", "Vityaz-SN" }
+                        } },
+                        { "AK-545", new List<List<string>>
+                        {
+                            new List<string> { "MOE SG" }
+                        } },
+                        { "AK-74N", new List<List<string>>
+                        {
+                            new List<string> { "B-10", "RK-1" }
+                        } },
+                        { "Saiga-12K", new List<List<string>>
+                        {
+                            new List<string> { "MOE SG" }
+                        } },
+                        { "AK-105", new List<List<string>>
+                        {
+                            new List<string> { "AK-12" },
+                        } },
+                        { "AK-103", new List<List<string>>
+                        {
+                            new List<string> { "AK-EPG" },
+                        } },
+                        { "AK-74M", new List<List<string>>
+                        {
+                            new List<string> { "MOE SG" },
+                        } },
+                        });
             }
 
             public GuardIdentifier(string mapId)
@@ -435,7 +465,22 @@ namespace eft_dma_radar.Tarkov.EFTPlayer
                 gunHasMods = null;
             }
         }
-            
+
+        
+
+        private void getMainPart(ObservedPlayer player)
+        {
+            var mainPartPtr = Memory.ReadPtr(player.Base + Offsets.ObservedPlayerView.MainParts);
+            using var items = MemDictionary<BodyPartType, int>.Get(mainPartPtr);
+            foreach (var item in items)
+            {
+                var enemyPartPtr = Memory.ReadPtr((ulong)item.Value);
+                bool canShoot = Memory.ReadValue<bool>(enemyPartPtr + Offsets.EnemyPart._canShoot);
+                Vector3 visabilityCast = Memory.ReadValue<Vector3>(enemyPartPtr + Offsets.EnemyPart._lastVisibilityCastOffsetLocal);
+                MessageBox.Show($"Part: {Enum.GetName<BodyPartType>(item.Key)} CanShoot: {canShoot} VisabilityCast: {visabilityCast}");
+            }
+        }
+
 
         internal ObservedPlayer(ulong playerBase) : base(playerBase)
         {
@@ -445,6 +490,8 @@ namespace eft_dma_radar.Tarkov.EFTPlayer
             ArgumentOutOfRangeException.ThrowIfNotEqual(this,
                 Memory.ReadValue<ulong>(ObservedPlayerController + Offsets.ObservedPlayerController.Player),
                 nameof(ObservedPlayerController));
+            //var mainPartPtr = Memory.ReadPtr(this + Offsets.ObservedPlayerView.MainParts);
+            //MainParts = MemDictionary<BodyPartType, ulong>.Get(mainPartPtr);
             ObservedHealthController = Memory.ReadPtr(ObservedPlayerController + Offsets.ObservedPlayerController.HealthController);
             ArgumentOutOfRangeException.ThrowIfNotEqual(this,
                 Memory.ReadValue<ulong>(ObservedHealthController + Offsets.ObservedHealthController.Player),
@@ -484,15 +531,31 @@ namespace eft_dma_radar.Tarkov.EFTPlayer
                         var role = Player.GetAIRoleInfo(VoiceLine);
                         Name = role.Name;
                         Type = role.Type;
+                        if(Memory.MapID.Equals("tarkovstreets", StringComparison.OrdinalIgnoreCase) && Memory.Players.Count(x => x.Type is PlayerType.AIBoss) > 0)
+                        {
+                            GearManager gear1 = new GearManager(this);
+                            if (gear1.Equipment.TryGetValue("Headwear", out var hat))
+                            {
+                                switch(hat.Short)
+                                {
+                                    case "Gus":
+                                    case "Basmach":
+                                        Name = hat.Short;
+                                        Type = PlayerType.AIRaider;
+                                        break;
+                                }
+                            }
+                        }
                         switch (Name)
                         {
                             case "Priest":
-                                GearManager newGear = new GearManager(this);
-                                if (newGear.Equipment.TryGetValue("FaceCover", out var face))
+                                GearManager gear2 = new GearManager(this);
+                                if (gear2.Equipment.TryGetValue("FaceCover", out var face))
                                 {
                                     if (face.Short.ToLower() == "zryachiy")
                                     {
                                         Name = "Zryachiy";
+                                        
                                     }
                                 }
                                 break;
@@ -594,6 +657,22 @@ namespace eft_dma_radar.Tarkov.EFTPlayer
             return movementController;
         }
 
+        public bool canSeePart(BodyPartType part)
+        {
+            if(MainParts is not null)
+            {
+                foreach(var item in MainParts)
+                {
+                    if(item.Key == part)
+                    {
+                        var enemyPartPtr = Memory.ReadPtr((ulong)item.Value);
+                        return Memory.ReadValue<bool>(enemyPartPtr + Offsets.EnemyPart._canShoot);
+                    }
+                }
+            }
+            return false;
+        }
+
         /// <summary>
         /// Refresh Player Information.
         /// </summary>
@@ -609,12 +688,28 @@ namespace eft_dma_radar.Tarkov.EFTPlayer
                     UpdatePlayerName();
                     UpdatePlayerPrestige();
                     UpdatePlayerLevel();
+                    UpdatePlayerKD();
                     UpdatePlayerHours();
                 }
                 UpdateHealthStatus();
-                UpdateVisability();
+                //UpdatePlayerMainParts();
+                //UpdateVisability();
             }
             base.OnRegRefresh(index, registered, isActive);
+        }
+
+        private void UpdatePlayerMainParts()
+        {
+            try
+            {
+                var mainPartPtr = Memory.ReadPtr(this + Offsets.ObservedPlayerView.MainParts);
+                MainParts?.Dispose();
+                MainParts = MemDictionary<BodyPartType, ulong>.Get(mainPartPtr);
+            }
+            catch (Exception ex)
+            {
+                LoneLogging.WriteLine($"ERROR updating Main Parts for Player '{Name}': {ex}");
+            }
         }
 
         private void UpdatePlayerPrestige()
@@ -646,6 +741,22 @@ namespace eft_dma_radar.Tarkov.EFTPlayer
             catch (Exception ex)
             {
                 LoneLogging.WriteLine($"ERROR updating Hours for Player '{Name}': {ex}");
+            }
+        }
+
+        private void UpdatePlayerKD()
+        {
+            try
+            {
+                float? kd = Profile.Overall_KD;
+                if (kd is not null && this.KD != kd)
+                {
+                    this.KD = kd.Value;
+                }
+            }
+            catch (Exception ex)
+            {
+                LoneLogging.WriteLine($"ERROR updating KD for Player '{Name}': {ex}");
             }
         }
 

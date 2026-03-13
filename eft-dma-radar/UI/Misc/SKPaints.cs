@@ -1,6 +1,7 @@
 ﻿using eft_dma_shared.Common.Misc;
 using OpenTK.Graphics.OpenGL;
 
+
 namespace eft_dma_radar.UI.Misc
 {
     internal static class SKPaints
@@ -289,6 +290,18 @@ namespace eft_dma_radar.UI.Misc
             FilterQuality = SKFilterQuality.High
         };
 
+        public static SKPaint TextGrenade { get; } = new()
+        {
+            SubpixelText = true,
+            Color = SKColors.Cyan,
+            IsStroke = false,
+            TextSize = 12,
+            TextEncoding = SKTextEncoding.Utf8,
+            IsAntialias = true,
+            Typeface = CustomFonts.SKFontFamilyRegular,
+            FilterQuality = SKFilterQuality.High
+        };
+
         #endregion
 
         #region Loot Paints
@@ -424,6 +437,15 @@ namespace eft_dma_radar.UI.Misc
             TextEncoding = SKTextEncoding.Utf8,
             IsAntialias = true,
             Typeface = CustomFonts.SKFontFamilyRegular,
+            FilterQuality = SKFilterQuality.High
+        };
+
+        public static SKPaint DoorViewerPaint { get; } = new()
+        {
+            Color = SKColors.Purple,
+            StrokeWidth = 0.25f,
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true,
             FilterQuality = SKFilterQuality.High
         };
 
